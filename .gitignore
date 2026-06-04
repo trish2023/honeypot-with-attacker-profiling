@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.env
+venv/
+.venv/
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+
+# MaxMind GeoIP database (binary, large, requires separate license)
+data/GeoLite2-City.mmdb
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Test / temp artifacts
+run.log
+err.log
+web.log
+weberr.log
+_*.py

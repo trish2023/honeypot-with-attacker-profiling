@@ -41,13 +41,7 @@ def _unknown_location() -> dict[str, str | float]:
             }
     except Exception:
         return _unknown_location()'''
-def locate(ip):
-    return {
-        "country": "Unknown",
-        "city": "Unknown", 
-        "lat": 0.0,
-        "lon": 0.0
-    }
+
 
 
 def _load_default_creds() -> set[tuple[str, str]]:

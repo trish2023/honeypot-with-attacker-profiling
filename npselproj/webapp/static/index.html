@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HONEYTRAP/LOGGER — threat console</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">HT<span class="mark-tick"></span></div>
+        <div>
+          <h1>HONEYTRAP<span class="sep">/</span>LOGGER</h1>
+          <p class="subtitle">DUAL-PROTOCOL SSH&middot;FTP HONEYPOT &mdash; LIVE THREAT INTELLIGENCE</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="conn-pill" id="connPill">
+          <span class="dot"></span><span id="connText">CONNECTING</span>
+        </div>
+        <button class="ghost-btn" id="helpBtn">HOW IT WORKS</button>
+      </div>
+    </header>
+
+    <!-- Status strip -->
+    <div class="statusline">
+      <span class="sl-item ok">// SYSTEM ARMED</span>
+      <span class="sl-item">SSH<b>:2222</b></span>
+      <span class="sl-item">FTP<b>:2121</b></span>
+      <span class="sl-spacer"></span>
+      <span class="sl-item" id="slClock">--:--:--</span>
+    </div>
+
+    <!-- Stat readouts -->
+    <section class="stats-row" id="statsRow">
+      <div class="stat-card" data-k="sessions">
+        <div class="stat-top"><span class="stat-label">SESSIONS</span><span class="stat-unit">[ TOT ]</span></div>
+        <div class="stat-value" id="stat-sessions">0</div>
+        <div class="stat-spark">attacker connections</div>
+      </div>
+      <div class="stat-card" data-k="attempts">
+        <div class="stat-top"><span class="stat-label">CREDENTIALS</span><span class="stat-unit">[ CAP ]</span></div>
+        <div class="stat-value" id="stat-attempts">0</div>
+        <div class="stat-spark">user / pass captured</div>
+      </div>
+      <div class="stat-card bot" data-k="bots">
+        <div class="stat-top"><span class="stat-label">BOTS</span><span class="stat-unit">&lt;500ms</span></div>
+        <div class="stat-value" id="stat-bots">0</div>
+        <div class="stat-spark">automated timing</div>
+      </div>
+      <div class="stat-card human" data-k="humans">
+        <div class="stat-top"><span class="stat-label">HUMANS</span><span class="stat-unit">&gt;3s</span></div>
+        <div class="stat-value" id="stat-humans">0</div>
+        <div class="stat-spark">deliberate timing</div>
+      </div>
+      <div class="stat-card breach" data-k="breaches">
+        <div class="stat-top"><span class="stat-label">BREACHES</span><span class="stat-unit">[ SH ]</span></div>
+        <div class="stat-value" id="stat-breaches">0</div>
+        <div class="stat-spark">reached fake shell</div>
+      </div>
+      <div class="stat-card" data-k="countries">
+        <div class="stat-top"><span class="stat-label">ORIGINS</span><span class="stat-unit">[ GEO ]</span></div>
+        <div class="stat-value" id="stat-countries">0</div>
+        <div class="stat-spark">unique countries</div>
+      </div>
+    </section>
+
+    <!-- Main grid -->
+    <main class="grid">
+      <!-- Map -->
+      <section class="panel map-panel">
+        <div class="panel-head">
+          <span class="idx">01</span><h2>ATTACK MAP</h2>
+          <span class="panel-tag" id="mapCount">0 origins</span>
+        </div>
+        <div id="map"></div>
+        <div class="map-legend">
+          <span><i class="swatch bot"></i> BOT</span>
+          <span><i class="swatch human"></i> HUMAN</span>
+          <span><i class="swatch unknown"></i> UNKNOWN</span>
+        </div>
+      </section>
+
+      <!-- Live feed -->
+      <section class="panel feed-panel">
+        <div class="panel-head">
+          <span class="idx">02</span><h2>EVENT STREAM</h2>
+          <span class="panel-tag pulse" id="feedTag">REC</span>
+        </div>
+        <div class="feed" id="feed"></div>
+      </section>
+
+      <!-- Attacks over time -->
+      <section class="panel">
+        <div class="panel-head"><span class="idx">03</span><h2>ATTACK VOLUME</h2><span class="panel-tag">per tick</span></div>
+        <canvas id="timeChart"></canvas>
+      </section>
+
+      <!-- Bot vs Human -->
+      <section class="panel">
+        <div class="panel-head"><span class="idx">04</span><h2>CLASSIFICATION</h2><span class="panel-tag">bot / human</span></div>
+        <canvas id="classChart"></canvas>
+      </section>
+
+      <!-- Top credentials -->
+      <section class="panel">
+        <div class="panel-head"><span class="idx">05</span><h2>TOP CREDENTIALS</h2><span class="panel-tag">most tried</span></div>
+        <canvas id="credChart"></canvas>
+      </section>
+
+      <!-- Intent -->
+      <section class="panel">
+        <div class="panel-head"><span class="idx">06</span><h2>POST-AUTH INTENT</h2><span class="panel-tag">behaviour</span></div>
+        <canvas id="intentChart"></canvas>
+      </section>
+    </main>
+
+    <!-- Control dock -->
+    <footer class="dock">
+      <div class="dock-group">
+        <span class="dock-label">SIMULATE</span>
+        <button class="btn bot" data-action="bot">BOT SWARM</button>
+        <button class="btn human" data-action="human">SLOW HUMAN</button>
+        <button class="btn danger" data-action="swarm">MEGA SWARM</button>
+        <button class="btn ghost" data-action="real">REAL ATTACK</button>
+      </div>
+      <div class="dock-group">
+        <span class="dock-label">CUSTOM</span>
+        <input type="number" id="customCount" value="15" min="1" max="200" />
+        <select id="customProfile">
+          <option value="bot">bot</option>
+          <option value="human">human</option>
+        </select>
+        <button class="btn" data-action="custom">LAUNCH</button>
+      </div>
+      <div class="dock-group">
+        <span class="dock-label">DEMO MODE</span>
+        <label class="switch">
+          <input type="checkbox" id="demoToggle" />
+          <span class="slider"></span>
+        </label>
+        <button class="btn ghost danger" data-action="clear">CLEAR</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Session detail drawer -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <h2>SESSION DETAIL</h2>
+      <button class="ghost-btn" id="drawerClose">CLOSE</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <!-- How it works modal -->
+  <div class="modal-overlay" id="helpOverlay">
+    <div class="modal">
+      <div class="drawer-head">
+        <h2>OPERATING PRINCIPLE</h2>
+        <button class="ghost-btn" id="helpClose">CLOSE</button>
+      </div>
+      <div class="modal-body">
+        <div class="concept">
+          <h3><span class="cidx">01</span> THE HONEYPOT</h3>
+          <p>Two fake services listen on raw TCP sockets &mdash; an <b>SSH</b> server (port 2222) and an <b>FTP</b> server (port 2121). They look real (banners, login prompts) but expose no actual system. Anything that connects is an intruder by definition.</p>
+        </div>
+        <div class="concept">
+          <h3><span class="cidx">02</span> CAPTURE &amp; ENRICHMENT</h3>
+          <p>Every username / password is logged, then flagged if it matches a known <b>default credential</b> or a <b>top-1000 common password</b>. The source IP is resolved to a country / city via GeoIP.</p>
+        </div>
+        <div class="concept">
+          <h3><span class="cidx">03</span> CLASSIFICATION</h3>
+          <p>The time between login attempts betrays the attacker. Sub-500ms gaps mean an automated <b>bot</b>; multi-second gaps mean a <b>human</b>. The engine labels every session live.</p>
+        </div>
+        <div class="concept">
+          <h3><span class="cidx">04</span> ADAPTIVE TARPIT</h3>
+          <p>Each failed attempt is answered slower than the last (1s &rarr; 3s &rarr; 8s &rarr; 20s) to waste the attacker's time and slow brute-force tools.</p>
+        </div>
+        <div class="concept">
+          <h3><span class="cidx">05</span> THE FAKE SHELL</h3>
+          <p>Some sessions are "granted" access and dropped into a simulated Linux shell. Every command is recorded and tagged by <b>intent</b> &mdash; malware download, credential harvesting, recon, persistence &mdash; revealing what the attacker wanted.</p>
+        </div>
+        <div class="concept">
+          <h3><span class="cidx">06</span> THIS CONSOLE</h3>
+          <p>All of the above streams into SQLite and is pushed here over a WebSocket in real time. The map, charts and feed update as attacks happen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

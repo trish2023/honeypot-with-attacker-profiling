@@ -1,0 +1,4 @@
+geoip2
+rich
+fastapi
+uvicorn[standard]
